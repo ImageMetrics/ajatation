@@ -16,6 +16,7 @@
 #pragma once
 
 #include "ntv2sharedcard.h"
+#include <assert.h>
 
 CNTV2SharedCard::CNTV2SharedCard()
 :   CNTV2Card()

@@ -20,9 +20,10 @@
 #include <memory>
 #include <string>
 #include <mutex>
-#include "ajabase\common\types.h"
+#include "ajabase/common/types.h"
 #include "ntv2devicescanner.h"
 #include "ntv2sharedcard.h"
+#include <assert.h>
 
 namespace streampunk {
 
@@ -33,7 +34,7 @@ class AjaDevice
 //
 public:
 
-    static const string DEFAULT_DEVICE_SPECIFIER;
+    static const std::string DEFAULT_DEVICE_SPECIFIER;
     static const uint32_t DEFAULT_CAPTURE_CHANNEL = 1;
     static const uint32_t DEFAULT_PLAYBACK_CHANNEL = 3;
 
@@ -73,7 +74,7 @@ public:
 
     private:
 
-        shared_ptr<AjaDevice> ref_;
+        std::shared_ptr<AjaDevice> ref_;
     };
 
     // Return device information - each parameter is filled in if a non-null pointer is supplied
@@ -101,21 +102,21 @@ private:
     void ReleaseDevice();
 
     std::string            deviceSpecifier_;
-    unique_ptr<CNTV2SharedCard>  device_;
+    std::unique_ptr<CNTV2SharedCard>  device_;
     NTV2EveryFrameTaskMode mode_;
     const InitParams*      initParams_;
     NTV2DeviceID           deviceId_;
 
-    static AJAStatus AddRef(std::string deviceSpecifier, shared_ptr<AjaDevice>& ref, const InitParams* initParams);
-    static void ReleaseRef(shared_ptr<AjaDevice>& ref);
+    static AJAStatus AddRef(std::string deviceSpecifier, std::shared_ptr<AjaDevice>& ref, const InitParams* initParams);
+    static void ReleaseRef(std::shared_ptr<AjaDevice>& ref);
 
     static void DumpDeviceInfo();
     static void DumpInfoItem(std::string& label, std::string& data);
 
-    static std::map<std::string, shared_ptr<AjaDevice>> references_;
+    static std::map<std::string, std::shared_ptr<AjaDevice>> references_;
     static std::mutex protectRefCounts_;
     static AJAStatus lastError_;
-    static unique_ptr<CNTV2DeviceScanner> deviceScanner_;
+    static std::unique_ptr<CNTV2DeviceScanner> deviceScanner_;
 };
 
 extern const AjaDevice::InitParams DEFAULT_INIT_PARAMS;

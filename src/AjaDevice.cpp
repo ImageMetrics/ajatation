@@ -17,8 +17,9 @@
 
 #include <assert.h>
 #include "AjaDevice.h"
-#include "ajabase\system\process.h"
-#include "ajantv2\includes\ntv2devicescanner.h"
+#include "ajabase/system/process.h"
+#include "ajantv2/includes/ntv2devicescanner.h"
+#include "ntv2devicefeatures.h"
 
 using namespace std;
 

@@ -6,10 +6,22 @@
     ],
     "conditions": [
       ['OS=="mac"', {
-        'sources' : [ "src/main.cpp", "src/ntv2democommon.cpp", "src/ntv2player.cpp" ],
+        "sources" : [ 
+          "aja/ntv2sdkmac_13.0.0.11/ajaapps/crossplatform/demoapps/ntv2democommon.cpp", 
+          "src/utils.cpp", 
+          "src/ajatation.cpp", 
+          "src/ntv2player.cpp", 
+          "src/ntv2capture.cpp", 
+          "src/Playback.cpp",
+          "src/Capture.cpp",
+          "src/gen2ajaTypeMaps.cpp",
+          "src/AjaDevice.cpp",
+          "src/ntv2sharedcard.cpp",
+          "src/BufferStatus.cpp"
+    ],
         'xcode_settings': {
           'GCC_ENABLE_CPP_RTTI': 'YES',
-          'MACOSX_DEPLOYMENT_TARGET': '10.7',
+          'MACOSX_DEPLOYMENT_TARGET': '10.8',
           'OTHER_CPLUSPLUSFLAGS': [
             '-std=c++11',
             '-stdlib=libc++'
@@ -17,10 +29,21 @@
         },
         "link_settings": {
           "libraries": [
+            "../aja/ntv2sdkmac_13.0.0.11/DerivedData/ntv2/Build/Products/libajabase.a",
+            "../aja/ntv2sdkmac_13.0.0.11/DerivedData/ntv2/Build/Products/libajantv2.a",
+            "-framework Foundation"
           ]
         },
         "include_dirs" : [
-        ]
+          "src/common",
+          "aja/ntv2sdkmac_13.0.0.11/ajalibraries",
+          "aja/ntv2sdkmac_13.0.0.11/ajalibraries/ajabase/common",
+          "aja/ntv2sdkmac_13.0.0.11/ajalibraries/ajaanc/includes",
+          "aja/ntv2sdkmac_13.0.0.11/ajalibraries/ajantv2/includes",
+          "aja/ntv2sdkmac_13.0.0.11/ajalibraries/ajantv2/src/mac",
+          "aja/ntv2sdkmac_13.0.0.11/ajaapps/crossplatform/demoapps"
+        ],
+        "defines": [ "AJAMac", "AJA_MAC" ]
       }],
       ['OS=="win"', {
         "sources" : [ 

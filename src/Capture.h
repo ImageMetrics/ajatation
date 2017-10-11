@@ -46,8 +46,8 @@ private:
   // setup the AJA Kona interface (video standard, pixel format, callback object, ...)
   bool initNtv2Capture();
 
-  HRESULT setupAudioInput(/*BMDAudioSampleRate sampleRate, BMDAudioSampleType sampleType,
-    uint32_t channelCount*/);
+  // HRESULT setupAudioInput(/*BMDAudioSampleRate sampleRate, BMDAudioSampleType sampleType,
+  //   uint32_t channelCount*/);
 
   bool initInput();
 

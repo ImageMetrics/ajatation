@@ -706,7 +706,7 @@ bool NTV2Player::ScheduleFrame(
         if (videoDataLength > 0)
         {
             // TODO: for the time being, blindly copy mis-matched frame data - potentially handle this differently
-            uint32_t copyBytes = min(videoDataLength, mVideoBufferSize);
+            uint32_t copyBytes = min((uint32_t)videoDataLength, mVideoBufferSize);
 
             if (videoData)
             {
@@ -718,7 +718,7 @@ bool NTV2Player::ScheduleFrame(
         if (audioDataLength > 0)
         {
             // TODO: for the time being, blindly copy mis-matched frame data - potentially handle this differently
-            uint32_t copyBytes = min(audioDataLength, mAudioBufferSize);
+            uint32_t copyBytes = min((uint32_t)audioDataLength, mAudioBufferSize);
 
             if (audioData)
             {

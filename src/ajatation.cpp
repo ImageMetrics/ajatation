@@ -65,11 +65,11 @@ NAN_METHOD(deviceSdkVersion)
 
   if(AjaDevice::GetDriverVersion(major, minor, point,build))
   {
-    sprintf_s(sdkVer, "Aja Driver Version: %d.%d.%d.%d", major, minor, point,build);
+    sprintf(sdkVer, "Aja Driver Version: %d.%d.%d.%d", major, minor, point,build);
   }
   else
   {
-    sprintf_s(sdkVer, "Aja Driver Version: Unavailable - ERROR");
+    sprintf(sdkVer, "Aja Driver Version: Unavailable - ERROR");
   }
 
   info.GetReturnValue().Set(Nan::New(sdkVer).ToLocalChecked());

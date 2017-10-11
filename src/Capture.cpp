@@ -97,27 +97,27 @@ NAN_METHOD(Capture::DeviceInit) {
 
 NAN_METHOD(Capture::EnableAudio) {
   Capture* obj = ObjectWrap::Unwrap<Capture>(info.Holder());
-  HRESULT result;
+  // HRESULT result;
   //BMDAudioSampleRate sampleRate = info[0]->IsNumber() ?
   //    (BMDAudioSampleRate) Nan::To<uint32_t>(info[0]).FromJust() : bmdAudioSampleRate48kHz;
   //BMDAudioSampleType sampleType = info[1]->IsNumber() ?
   //    (BMDAudioSampleType) Nan::To<uint32_t>(info[1]).FromJust() : bmdAudioSampleType16bitInteger;
   //uint32_t channelCount = info[2]->IsNumber() ? Nan::To<uint32_t>(info[2]).FromJust() : 2;
 
-  result = obj->setupAudioInput(/*sampleRate, sampleType, channelCount*/);
+  // result = obj->setupAudioInput(/*sampleRate, sampleType, channelCount*/);
 
-  switch (result) {
-    case E_INVALIDARG:
-      info.GetReturnValue().Set(
-        Nan::New<v8::String>("audio channel count must be 2, 8 or 16").ToLocalChecked());
-      break;
-    case S_OK:
-      info.GetReturnValue().Set(Nan::New<v8::String>("audio enabled").ToLocalChecked());
-      break;
-    default:
-      info.GetReturnValue().Set(Nan::New<v8::String>("failed to start audio").ToLocalChecked());
-      break;
-  }
+  // switch (result) {
+  //   case E_INVALIDARG:
+  //     info.GetReturnValue().Set(
+  //       Nan::New<v8::String>("audio channel count must be 2, 8 or 16").ToLocalChecked());
+  //     break;
+  //   case S_OK:
+  //     info.GetReturnValue().Set(Nan::New<v8::String>("audio enabled").ToLocalChecked());
+  //     break;
+  //   default:
+  //     info.GetReturnValue().Set(Nan::New<v8::String>("failed to start audio").ToLocalChecked());
+  //     break;
+  // }
 }
 
 NAN_METHOD(Capture::DoCapture) {
@@ -186,7 +186,7 @@ bool Capture::initNtv2Capture()
     string deviceSpec(AjaDevice::DEFAULT_DEVICE_SPECIFIER);
     char buffer[10];
     
-    if(_itoa_s(deviceIndex_, buffer, 10) == 0)
+    if(snprintf(buffer, sizeof(buffer), "%d", deviceIndex_) > 0)
     {
         deviceSpec = buffer;
     }
@@ -226,17 +226,17 @@ bool Capture::initNtv2Capture()
 }
 
 
-HRESULT Capture::setupAudioInput(/*BMDAudioSampleRate sampleRate,
-  BMDAudioSampleType sampleType, uint32_t channelCount*/) {
+// HRESULT Capture::setupAudioInput(/*BMDAudioSampleRate sampleRate,
+//   BMDAudioSampleType sampleType, uint32_t channelCount*/) {
 
-  audioEnabled_ = true;
-  // TODO: handle audio properly
+//   audioEnabled_ = true;
+//   // TODO: handle audio properly
 
-  //sampleByteFactor_ = channelCount * (sampleType / 8);
-  //HRESULT result = m_deckLinkInput->EnableAudioInput(sampleRate, sampleType, channelCount);
+//   //sampleByteFactor_ = channelCount * (sampleType / 8);
+//   //HRESULT result = m_deckLinkInput->EnableAudioInput(sampleRate, sampleType, channelCount);
 
-  return S_OK;
-}
+//   return S_OK;
+// }
 
 // Stop video input
 bool Capture::cleanupNtv2Capture()
