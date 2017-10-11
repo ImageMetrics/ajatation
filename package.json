@@ -4,7 +4,7 @@
   "description": "Async node.js interface to Aja Kona IP capture and playback devices.",
   "main": "index.js",
   "scripts": {
-    "install": "node-gyp rebuild",
+    "install": "node-gyp rebuild && electron-rebuild -f",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -19,6 +19,8 @@
   "homepage": "https://github.com/Streampunk/ajatation#readme",
   "dependencies": {
     "bindings": "^1.2.1",
+    "electron": "^1.7.9",
+    "electron-rebuild": "^1.6.0",
     "highland": "^2.11.1",
     "nan": "^2.6.2",
     "node-gyp": "^3.6.2"
