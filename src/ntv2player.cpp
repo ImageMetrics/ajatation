@@ -458,28 +458,28 @@ void NTV2Player::PlayFrames (void)
     uint32_t    fAncBufferSize = mAncType != AJAAncillaryDataType_Unknown ? NTV2_ANCSIZE_MAX : 0;
     ::memset((void*)fAncBuffer, 0x00, fAncBufferSize);
     uint32_t    packetSize = 0;
-    switch(mAncType)
-    {
-    case AJAAncillaryDataType_HDR_SDR:
-    {
-        AJAAncillaryData_HDR_SDR sdrPacket;
-        sdrPacket.GenerateTransmitData((uint8_t*)fAncBuffer, fAncBufferSize, packetSize);
-        break;
-    }
-    case AJAAncillaryDataType_HDR_HDR10:
-    {
-        AJAAncillaryData_HDR_HDR10 hdr10Packet;
-        hdr10Packet.GenerateTransmitData((uint8_t*)fAncBuffer, fAncBufferSize, packetSize);
-        break;
-    }
-    case AJAAncillaryDataType_HDR_HLG:
-    {
-        AJAAncillaryData_HDR_HLG hlgPacket;
-        hlgPacket.GenerateTransmitData((uint8_t*)fAncBuffer, fAncBufferSize, packetSize);
-        break;
-    }
-    default:    break;
-    }
+    //switch(mAncType)
+    //{
+    //case AJAAncillaryDataType_HDR_SDR:
+    //{
+    //    AJAAncillaryData_HDR_SDR sdrPacket;
+    //    sdrPacket.GenerateTransmitData((uint8_t*)fAncBuffer, fAncBufferSize, packetSize);
+    //    break;
+    //}
+    //case AJAAncillaryDataType_HDR_HDR10:
+    //{
+    //    AJAAncillaryData_HDR_HDR10 hdr10Packet;
+    //    hdr10Packet.GenerateTransmitData((uint8_t*)fAncBuffer, fAncBufferSize, packetSize);
+    //    break;
+    //}
+    //case AJAAncillaryDataType_HDR_HLG:
+    //{
+    //    AJAAncillaryData_HDR_HLG hlgPacket;
+    //    hlgPacket.GenerateTransmitData((uint8_t*)fAncBuffer, fAncBufferSize, packetSize);
+    //    break;
+    //}
+    //default:    break;
+    //}
 
     while (!mGlobalQuit)
     {

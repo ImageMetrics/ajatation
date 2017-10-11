@@ -70,7 +70,6 @@
           }
         },
         "libraries": [
-			"-l../aja/ntv2sdkwin_13.0.0.18/lib/libajaanc_vs12_64.lib",
 			"-l../aja/ntv2sdkwin_13.0.0.18/lib/libajantv2.lib",
 			"-l../aja/ntv2sdkwin_13.0.0.18/lib/libajabase.lib"
         ],
