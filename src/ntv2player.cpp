@@ -481,8 +481,6 @@ void NTV2Player::PlayFrames (void)
     //default:    break;
     //}
 
-    mDeviceRef->AutoCirculateStart(mOutputChannel);    //    Start it running
-    
     while (!mGlobalQuit)
     {
         AUTOCIRCULATE_STATUS    outputStatus;
@@ -491,7 +489,7 @@ void NTV2Player::PlayFrames (void)
         ULWord numAvailableFrames = outputStatus.GetNumAvailableOutputFrames();
 
         //    Check if there's room for another frame on the card...
-        if (numAvailableFrames > 1)
+        if (numAvailableFrames > 1 && CheckOutputReady())
         {
             LogBufferState(numAvailableFrames);
 
