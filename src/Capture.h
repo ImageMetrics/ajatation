@@ -13,10 +13,6 @@
   limitations under the License.
 */
 
-/* TODO: add license
- ** 
- */
-
 #ifndef CAPTURE_H
 #define CAPTURE_H
 
@@ -28,13 +24,15 @@
 #include <memory>
 
 #include "ntv2capture.h"
+#include "AudioTransform.h"
+#include "gen2ajaTypeMaps.h"
 
 namespace streampunk {
 
 class Capture : public Nan::ObjectWrap
 {
 private:
-  explicit Capture(uint32_t deviceIndex = 0, uint32_t displayMode = 0, uint32_t pixelFormat = 0);
+  explicit Capture(uint32_t deviceIndex = 0, uint32_t channelNumber = 0, uint32_t displayMode = 0, uint32_t pixelFormat = 0);
   ~Capture();
 
   static NAN_METHOD(New);
@@ -46,8 +44,7 @@ private:
   // setup the AJA Kona interface (video standard, pixel format, callback object, ...)
   bool initNtv2Capture();
 
-  // HRESULT setupAudioInput(/*BMDAudioSampleRate sampleRate, BMDAudioSampleType sampleType,
-  //   uint32_t channelCount*/);
+  HRESULT setupAudioInput();
 
   bool initInput();
 
@@ -55,12 +52,10 @@ private:
 
   bool capture();
   bool stop();
+  GenericDisplayMode getVideoFormat();
 
   NTV2FrameBufferFormat getPixelFormat(uint32_t genericPixelFormat);
 
-  // init() must be called after the constructor.
-  // if init() fails, call the destructor
-  //bool            init();
   static NAN_METHOD(DeviceInit);
 
   // start the capture operation. returns when the operation has completed
@@ -70,28 +65,27 @@ private:
 
   static NAN_METHOD(EnableAudio);
 
+  static NAN_METHOD(GetVideoFormat);
+
   static NAUV_WORK_CB(FrameCallback);
 
   uint32_t deviceIndex_;
+  uint32_t channelNumber_;
   uint32_t displayMode_;
   uint32_t genericPixelFormat_;
   //uint32_t width_;
   //uint32_t height_;
   bool audioEnabled_;
 
-  // uint32_t sampleByteFactor_;
+  Aja::AudioTransform audioTransform;
+
   Nan::Persistent<v8::Function> captureCB_;
-  // IDeckLinkVideoInputFrame* latestFrame_;
-  // IDeckLinkAudioInputPacket* latestAudio_;
 
   std::unique_ptr<NTV2Capture> capture_;
 
 public:
   static NAN_MODULE_INIT(Init);
 
-  // IDeckLinkInputCallback
-  //virtual HRESULT    VideoInputFormatChanged (BMDVideoInputFormatChangedEvents notificationEvents, IDeckLinkDisplayMode* newDisplayMode, BMDDetectedVideoInputFormatFlags detectedSignalFlags);
-  //virtual HRESULT    VideoInputFrameArrived (IDeckLinkVideoInputFrame* arrivedFrame, IDeckLinkAudioInputPacket*);
   virtual void TestUV();
 
   void frameArrived();

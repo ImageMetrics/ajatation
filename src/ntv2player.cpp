@@ -2,6 +2,8 @@
     @file        ntv2player.cpp
     @brief        Implementation of NTV2Player class.
     @copyright    Copyright (C) 2013-2017 AJA Video Systems, Inc.  All rights reserved.
+
+    This version of the file is based upon the sample code provided by Aja
 **/
 
 /* Copyright 2017 Streampunk Media Ltd.
@@ -31,6 +33,9 @@ limitations under the License.
 #include <algorithm>
 #include "utils.h"
 #include "BufferStatus.h"
+
+// TEST
+//#include <time.h>
 
 #ifdef DEBUG_OUTPUT
 #include <iostream>
@@ -69,6 +74,54 @@ const unsigned int TOTAL_BUFFER_SIZE(ON_DEVICE_BUFFER_SIZE + CIRCULAR_BUFFER_SIZ
 const unsigned int TARGET_FILL_LEVEL(TOTAL_BUFFER_SIZE / 2);
 const unsigned int BUFFER_PRE_FILL_MARGIN(2);
 
+/*
+#include <iostream>
+#include <fstream>
+void DumpAudioToFile(uint32_t* buffer, uint32_t bufferSize)
+{
+	ofstream myfile;
+
+	static bool started(false);
+
+	if (started)
+	{
+		myfile.open("C:\\Users\\DSI-User\\Documents\\out1.dat", ios::out | ios::app | ios::binary);
+	}
+	else
+	{
+		myfile.open("C:\\Users\\DSI-User\\Documents\\out1.dat", ios::out | ios::trunc | ios::binary);
+		started = true;
+	}
+
+	if (myfile.is_open())
+	{
+		myfile.write((char*)buffer, bufferSize);
+		myfile.close();
+	}
+
+
+}
+
+
+void DumpAudioInfo(const string &inDeviceSpecifier, char* message, bool audio, uint32_t* buffer, uint32_t bufferSize)
+{
+    if(audio)
+    {
+        bool gotData = false;
+        for(int i = 0; i < 16 && i < bufferSize; i++)
+        {
+            if(buffer[i] != 0x00) gotData = true;
+        }
+
+        cout << "!! " << inDeviceSpecifier << "-" << message << " (" << dec << bufferSize << ") bytes of " << (gotData ? "+++VALID+++": "---NULL---") << " audio !!" << endl;
+    }
+    else
+    {
+        cout << "!! NO AUDIO !!" << endl;
+    }
+}
+*/
+
 NTV2Player::NTV2Player (const AjaDevice::InitParams* initParams,
                         const string &               inDeviceSpecifier,
                         const bool                   inWithAudio,
@@ -81,7 +134,7 @@ NTV2Player::NTV2Player (const AjaDevice::InitParams* initParams,
                         const bool                   inDoMultiChannel,
                         const AJAAncillaryDataType   inSendHDRType)
 
-    :    mConsumerThread             (NULL),
+:       mConsumerThread              (NULL),
         mProducerThread              (NULL),
         mLock                        (new AJALock (CNTV2DemoCommon::GetGlobalMutexName ())),
         mCurrentFrame                (0),
@@ -111,7 +164,8 @@ NTV2Player::NTV2Player (const AjaDevice::InitParams* initParams,
         mAncType                     (inSendHDRType),
         mInitParams                  (initParams),
         mEnableTestPatternFill       (false),
-        mOutputStarted               (false)
+        mOutputStarted               (false),
+        mBufferedFrames              (0)
 {
     ::memset (mAVHostBuffer, 0, sizeof (mAVHostBuffer));
 }
@@ -235,6 +289,8 @@ AJAStatus NTV2Player::SetUpVideo ()
 
     //    Configure the device to handle the requested video format...
     mDeviceRef->SetVideoFormat(false, mVideoFormat, false, false, mOutputChannel);
+
+    {cout << "Set Output Video Format: " << mVideoFormat << endl;}
 
     if (!::NTV2DeviceCanDo3GLevelConversion (mDeviceID) && mDoLevelConversion && ::IsVideoFormatA (mVideoFormat))
         mDoLevelConversion = false;
@@ -449,7 +505,6 @@ void NTV2Player::ConsumerThreadStatic (AJAThread * pThread, void * pContext)    
 
 }    //    ConsumerThreadStatic
 
-
 void NTV2Player::PlayFrames (void)
 {
     AUTOCIRCULATE_TRANSFER        mOutputXferInfo;
@@ -458,28 +513,28 @@ void NTV2Player::PlayFrames (void)
     uint32_t    fAncBufferSize = mAncType != AJAAncillaryDataType_Unknown ? NTV2_ANCSIZE_MAX : 0;
     ::memset((void*)fAncBuffer, 0x00, fAncBufferSize);
     uint32_t    packetSize = 0;
-    //switch(mAncType)
-    //{
-    //case AJAAncillaryDataType_HDR_SDR:
-    //{
-    //    AJAAncillaryData_HDR_SDR sdrPacket;
-    //    sdrPacket.GenerateTransmitData((uint8_t*)fAncBuffer, fAncBufferSize, packetSize);
-    //    break;
-    //}
-    //case AJAAncillaryDataType_HDR_HDR10:
-    //{
-    //    AJAAncillaryData_HDR_HDR10 hdr10Packet;
-    //    hdr10Packet.GenerateTransmitData((uint8_t*)fAncBuffer, fAncBufferSize, packetSize);
-    //    break;
-    //}
-    //case AJAAncillaryDataType_HDR_HLG:
-    //{
-    //    AJAAncillaryData_HDR_HLG hlgPacket;
-    //    hlgPacket.GenerateTransmitData((uint8_t*)fAncBuffer, fAncBufferSize, packetSize);
-    //    break;
-    //}
-    //default:    break;
-    //}
+    switch(mAncType)
+    {
+    case AJAAncillaryDataType_HDR_SDR:
+    {
+        AJAAncillaryData_HDR_SDR sdrPacket;
+        sdrPacket.GenerateTransmitData((uint8_t*)fAncBuffer, fAncBufferSize, packetSize);
+        break;
+    }
+    case AJAAncillaryDataType_HDR_HDR10:
+    {
+        AJAAncillaryData_HDR_HDR10 hdr10Packet;
+        hdr10Packet.GenerateTransmitData((uint8_t*)fAncBuffer, fAncBufferSize, packetSize);
+        break;
+    }
+    case AJAAncillaryDataType_HDR_HLG:
+    {
+        AJAAncillaryData_HDR_HLG hlgPacket;
+        hlgPacket.GenerateTransmitData((uint8_t*)fAncBuffer, fAncBufferSize, packetSize);
+        break;
+    }
+    default:    break;
+    }
 
     while (!mGlobalQuit)
     {
@@ -502,6 +557,11 @@ void NTV2Player::PlayFrames (void)
 
                 //    Transfer the timecode-burned frame to the device for playout...
                 mOutputXferInfo.SetVideoBuffer (playData->fVideoBuffer, playData->fVideoBufferSize);
+
+                //DumpAudioInfo(mDeviceSpecifier, "Transferring to audio card: ", mWithAudio, playData->fAudioBuffer, playData->fAudioBufferSize);
+
+                //DumpAudioToFile(playData->fAudioBuffer, playData->fAudioBufferSize);
+
                 mOutputXferInfo.SetAudioBuffer (mWithAudio ? playData->fAudioBuffer : NULL, mWithAudio ? playData->fAudioBufferSize : 0);
                 mOutputXferInfo.SetAncBuffers(fAncBuffer, NTV2_ANCSIZE_MAX, NULL, 0);
                 mDeviceRef->AutoCirculateTransfer(mOutputChannel, mOutputXferInfo);
@@ -544,8 +604,14 @@ void NTV2Player::PlayFrames (void)
 
 void NTV2Player::LogBufferState(ULWord cardBufferFreeSlots)
 {
-    float usedCircBufferPercent = (float)(mAVCircularBuffer.GetCircBufferCount() * 100) / (float)CIRCULAR_BUFFER_SIZE;
-    float userCardBufferPercent = (float)((ON_DEVICE_BUFFER_SIZE - cardBufferFreeSlots) * 100) / (float)ON_DEVICE_BUFFER_SIZE;
+    auto cardBufferUsedSlots = ON_DEVICE_BUFFER_SIZE - cardBufferFreeSlots;
+    auto circBufferUsedSlots = mAVCircularBuffer.GetCircBufferCount();
+
+    // Store the total number of used buffer slots to return from the producer thread
+    SetUsedBuffers(cardBufferUsedSlots + circBufferUsedSlots);
+
+    float usedCircBufferPercent = (float)(circBufferUsedSlots * 100) / (float)CIRCULAR_BUFFER_SIZE;
+    float userCardBufferPercent = (float)(cardBufferUsedSlots * 100) / (float)ON_DEVICE_BUFFER_SIZE;
 
     BufferStatus::AddSample(BufferStatus::PlaybackCircBuffer, usedCircBufferPercent);
     BufferStatus::AddSample(BufferStatus::PlaybackCardBuffer, userCardBufferPercent);
@@ -679,17 +745,17 @@ static const double    gAmplitudes []    =    {    0.10, 0.15,        0.20, 0.25
 /**
 @brief    Add a frame to the frame buffer, to be played out in its turn.
 @param[in]    videoData            pointer to the video frame to queue.
-@param[in]    videoDataLength        length of the video data in bytes.
+@param[in]    videoDataLength      length of the video data in bytes.
 @param[in]    audioData            pointer to the audio frame to queue.
-@param[in]    audioDataLength        length of the audio data in bytes.
-@param[out]    unusedFrames        If not null, receives the number of unused frames that can be written to.
+@param[in]    audioDataLength      length of the audio data in bytes.
+@param[out]   usedFrames          If not null, receives the number of buffered frames.
 **/
 bool NTV2Player::ScheduleFrame(
     const char* videoData,
     const size_t videoDataLength,
     const char* audioData,
     const size_t audioDataLength,
-    uint32_t* unusedFrames)
+    uint32_t* usedFrames)
 {
     bool addedFrame = false;
 
@@ -703,30 +769,35 @@ bool NTV2Player::ScheduleFrame(
     //  If no frame is available, wait and try again
     if (frameData)
     {
-        if (videoDataLength > 0)
+        if (videoDataLength > 0 && videoData != nullptr)
         {
             // TODO: for the time being, blindly copy mis-matched frame data - potentially handle this differently
-            uint32_t copyBytes = min((uint32_t)videoDataLength, mVideoBufferSize);
+            uint32_t copyBytes = min(static_cast<uint32_t>(videoDataLength), mVideoBufferSize);
 
-            if (videoData)
-            {
-                //    Copy my pre-made test pattern into my video buffer...
-                ::memcpy(frameData->fVideoBuffer, videoData, copyBytes);
-            }
+            //    Copy my pre-made test pattern into my video buffer...
+            ::memcpy(frameData->fVideoBuffer, videoData, copyBytes);
+            frameData->fVideoBufferSize = copyBytes;
+        }
+        else
+        {
+            frameData->fVideoBufferSize = 0;
         }
 
-        if (audioDataLength > 0)
+        //DumpAudioInfo(mDeviceSpecifier, "Transferring to circular buffer: ", mWithAudio, (uint32_t*)audioData, audioDataLength);
+
+        if (audioDataLength > 0 && audioData != nullptr)
         {
             // TODO: for the time being, blindly copy mis-matched frame data - potentially handle this differently
-            uint32_t copyBytes = min((uint32_t)audioDataLength, mAudioBufferSize);
+            uint32_t copyBytes = min(static_cast<uint32_t>(audioDataLength), mAudioBufferSize);
 
-            if (audioData)
-            {
-                //    Copy my pre-made test pattern into my video buffer...
-                ::memcpy(frameData->fAudioBuffer, audioData, copyBytes);
-            }
+            //    Copy my pre-made test pattern into my video buffer...
+            ::memcpy(frameData->fAudioBuffer, audioData, copyBytes);
+            frameData->fAudioBufferSize = static_cast<uint32_t>(audioDataLength);
         }
-
+        else
+        {
+            frameData->fAudioBufferSize = 0;
+        }
         // TODO: Copy other buffers
 
         //    Signal that I'm done producing the buffer -- it's now available for playout...
@@ -741,9 +812,9 @@ bool NTV2Player::ScheduleFrame(
     }
 #endif
 
-    if (unusedFrames != nullptr)
+    if (usedFrames != nullptr)
     {
-        *unusedFrames = CIRCULAR_BUFFER_SIZE - mAVCircularBuffer.GetCircBufferCount();
+        *usedFrames = GetUsedBuffers();
     }
 
     return addedFrame;

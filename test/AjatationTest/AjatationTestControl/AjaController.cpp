@@ -1,3 +1,18 @@
+/* Copyright 2017 Streampunk Media Ltd.
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+*/
+
 #include "stdafx.h"
 #include "AjaController.h"
 #include "NTV2Capture.h"
@@ -21,7 +36,7 @@ AjaController::~AjaController()
 }
 
 
-bool AjaController::StartCapture()
+bool AjaController::StartCapture(UINT32 deviceId, UINT32 channelId)
 {
     bool success(false);
 
@@ -31,7 +46,11 @@ bool AjaController::StartCapture()
     {
         TRACE("Initializing Capture...");
 
-        capture.reset(new NTV2Capture(&DEFAULT_INIT_PARAMS, "0", true, NTV2_CHANNEL1, NTV2_FBF_10BIT_YCBCR));
+        char buffer[16] = {0};
+        char* deviceIdString = itoa(deviceId, buffer, 10);
+        const NTV2Channel channel(::GetNTV2ChannelForIndex(channelId - 1));
+
+        capture.reset(new NTV2Capture(&DEFAULT_INIT_PARAMS, deviceIdString, true, channel, NTV2_FBF_10BIT_YCBCR));
         capture->SetFrameArrivedCallback(this, AjaController::FrameArrivedCallback);
 
         auto result = capture->Init();
@@ -95,7 +114,7 @@ bool AjaController::IsCapturing()
 }
 
 
-bool AjaController::StartPlayback()
+bool AjaController::StartPlayback(UINT32 deviceId, UINT32 channelId)
 {
     bool success(false);
 
@@ -105,12 +124,14 @@ bool AjaController::StartPlayback()
     {
         TRACE("Initializing Playback...");
 
-        uint32_t        channelNumber(3);                    //    Number of the channel to use
+        char buffer[16] = {0};
+        char* deviceIdString = itoa(deviceId, buffer, 10);
+
         int                noAudio(0);                    //    Disable audio tone?
-        const NTV2Channel channel(::GetNTV2ChannelForIndex(channelNumber - 1));
+        const NTV2Channel channel(::GetNTV2ChannelForIndex(channelId - 1));
         const NTV2OutputDestination    outputDest(::NTV2ChannelToOutputDestination(channel));
 
-        player.reset(new NTV2Player(&DEFAULT_INIT_PARAMS, "0", true, channel, NTV2_FBF_10BIT_YCBCR, outputDest, NTV2_FORMAT_1080i_5994,false, false, false));
+        player.reset(new NTV2Player(&DEFAULT_INIT_PARAMS, deviceIdString, true, channel, NTV2_FBF_10BIT_YCBCR, outputDest, NTV2_FORMAT_1080i_5994,false, false, false));
         player->SetScheduledFrameCallback(this, AjaController::FrameRequiredCallback);
 
         auto result = player->Init();

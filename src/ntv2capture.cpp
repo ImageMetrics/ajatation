@@ -2,7 +2,24 @@
     @file        ntv2capture.cpp
     @brief        Implementation of NTV2Capture class.
     @copyright    Copyright (C) 2012-2017 AJA Video Systems, Inc.  All rights reserved.
+
+    This version of the file is based upon the sample code provided by Aja
 **/
+
+/* Copyright 2017 Streampunk Media Ltd.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
 
 #include <iterator>    //    for inserter
 #include "ntv2capture.h"
@@ -11,10 +28,6 @@
 #include "ajabase/system/process.h"
 #include "ajabase/system/systemtime.h"
 #include "BufferStatus.h"
-
-#define NTV2_AUDIOSIZE_MAX    (401 * 1024)
-#define NTV2_ANCSIZE_MAX    (0x2000)
-
 
 static const ULWord    kAppSignature    AJA_FOURCC('S', 'T', 'P', 'K');
 
@@ -30,18 +43,18 @@ NTV2Capture::NTV2Capture (const streampunk::AjaDevice::InitParams* initParams,
                           const bool                    inDoMultiFormat,
                           const bool                    inWithAnc)
 
-    :    mProducerThread                (NULL),
-        mLock                        (new AJALock (CNTV2DemoCommon::GetGlobalMutexName ())),
-        mDeviceID                    (DEVICE_ID_NOTFOUND),
+:       mProducerThread             (NULL),
+        mLock                       (new AJALock (CNTV2DemoCommon::GetGlobalMutexName ())),
+        mDeviceID                   (DEVICE_ID_NOTFOUND),
         mDeviceSpecifier            (inDeviceSpecifier),
-        mInputChannel                (inChannel),
+        mInputChannel               (inChannel),
         mInputSource                (::NTV2ChannelToInputSource (inChannel)),
         mVideoFormat                (NTV2_FORMAT_UNKNOWN),
         mPixelFormat                (inPixelFormat),
-        mSavedTaskMode                (NTV2_DISABLE_TASKS),
+        mSavedTaskMode              (NTV2_DISABLE_TASKS),
         mAudioSystem                (inWithAudio ? NTV2_AUDIOSYSTEM_1 : NTV2_AUDIOSYSTEM_INVALID),
-        mDoLevelConversion            (inLevelConversion),
-        mGlobalQuit                    (false),
+        mDoLevelConversion          (inLevelConversion),
+        mGlobalQuit                 (false),
         mWithAnc                    (inWithAnc),
         mVideoBufferSize            (0),
         mFrameArrivedCallbackContext(NULL),
@@ -110,7 +123,7 @@ AJAStatus NTV2Capture::Init (void)
 
     if (AJA_SUCCESS(status))
     {
-        mDeviceID = mDeviceRef->GetDeviceID();                        //    Keep the device ID handy, as it's used frequently
+        mDeviceID = mDeviceRef->GetDeviceID();      //    Keep the device ID handy, as it's used frequently
         if (!::NTV2DeviceCanDoCapture(mDeviceID))
         {
             cerr << "## ERROR:  Device '" << mDeviceSpecifier << "' cannot capture" << endl;  return AJA_STATUS_FEATURE;
@@ -182,6 +195,8 @@ AJAStatus NTV2Capture::SetupVideo (void)
     mDeviceRef->SetReference(true, ::NTV2InputSourceToReferenceSource(mInputSource));
     mDeviceRef->SetVideoFormat(true, mVideoFormat, false, false, mInputChannel);
 
+    {cout << "Set Input Video Format: " << mVideoFormat << endl;}
+
     //    Set the frame buffer pixel format for all the channels on the device
     //    (assuming it supports that pixel format -- otherwise default to 8-bit YCbCr)...
     if (!::NTV2DeviceCanDoFrameBufferFormat (mDeviceID, mPixelFormat))
@@ -201,8 +216,12 @@ AJAStatus NTV2Capture::SetupVideo (void)
 AJAStatus NTV2Capture::SetupAudio (void)
 {
     //    In multiformat mode, base the audio system on the channel...
-    if (mInitParams->doMultiChannel  &&  ::NTV2DeviceGetNumAudioSystems(mDeviceID) > 1  &&  UWord(mInputChannel) < ::NTV2DeviceGetNumAudioSystems(mDeviceID))
+    if (::NTV2DeviceGetNumAudioSystems(mDeviceID) > 1  &&  UWord(mInputChannel) < ::NTV2DeviceGetNumAudioSystems(mDeviceID))
         mAudioSystem = ::NTV2ChannelToAudioSystem (mInputChannel);
+
+    cout << "NOTE: Setting Up Audio for Channel " << mInputChannel << endl;
+    cout << "    mAudioSystem  = " << mAudioSystem << endl;
+    cout << "    embedded a in = " << ::NTV2ChannelToEmbeddedAudioInput(mInputChannel) << endl;
 
     //    Have the audio system capture audio from the designated device input (i.e., ch1 uses SDIIn1, ch2 uses SDIIn2, etc.)...
     mDeviceRef->SetAudioSystemInputSource(mAudioSystem, NTV2_AUDIO_EMBEDDED, ::NTV2ChannelToEmbeddedAudioInput(mInputChannel));
@@ -234,14 +253,14 @@ void NTV2Capture::SetupHostBuffers (void)
     //    Allocate and add each in-host AVDataBuffer to my circular buffer member variable...
     for (unsigned bufferNdx (0);  bufferNdx < CIRCULAR_BUFFER_SIZE;  bufferNdx++)
     {
-        mAVHostBuffer [bufferNdx].fVideoBuffer        = reinterpret_cast <uint32_t *> (new uint8_t [mVideoBufferSize]);
-        mAVHostBuffer [bufferNdx].fVideoBufferSize    = mVideoBufferSize;
-        mAVHostBuffer [bufferNdx].fAudioBuffer        = NTV2_IS_VALID_AUDIO_SYSTEM (mAudioSystem) ? reinterpret_cast <uint32_t *> (new uint8_t [NTV2_AUDIOSIZE_MAX]) : 0;
-        mAVHostBuffer [bufferNdx].fAudioBufferSize    = NTV2_IS_VALID_AUDIO_SYSTEM (mAudioSystem) ? NTV2_AUDIOSIZE_MAX : 0;
+        mAVHostBuffer [bufferNdx].fVideoBuffer      = reinterpret_cast <uint32_t *> (new uint8_t [mVideoBufferSize]);
+        mAVHostBuffer [bufferNdx].fVideoBufferSize  = mVideoBufferSize;
+        mAVHostBuffer [bufferNdx].fAudioBuffer      = NTV2_IS_VALID_AUDIO_SYSTEM (mAudioSystem) ? reinterpret_cast <uint32_t *> (new uint8_t [NTV2_AUDIOSIZE_MAX]) : 0;
+        mAVHostBuffer [bufferNdx].fAudioBufferSize  = NTV2_IS_VALID_AUDIO_SYSTEM (mAudioSystem) ? NTV2_AUDIOSIZE_MAX : 0;
         mAVHostBuffer [bufferNdx].fAncBuffer        = mWithAnc ? reinterpret_cast <uint32_t *> (new uint8_t [NTV2_ANCSIZE_MAX]) : 0;
         mAVHostBuffer [bufferNdx].fAncBufferSize    = mWithAnc ? NTV2_ANCSIZE_MAX : 0;
-        mAVHostBuffer [bufferNdx].fAncF2Buffer        = mWithAnc ? reinterpret_cast <uint32_t *> (new uint8_t [NTV2_ANCSIZE_MAX]) : 0;
-        mAVHostBuffer [bufferNdx].fAncF2BufferSize    = mWithAnc ? NTV2_ANCSIZE_MAX : 0;
+        mAVHostBuffer [bufferNdx].fAncF2Buffer      = mWithAnc ? reinterpret_cast <uint32_t *> (new uint8_t [NTV2_ANCSIZE_MAX]) : 0;
+        mAVHostBuffer [bufferNdx].fAncF2BufferSize  = mWithAnc ? NTV2_ANCSIZE_MAX : 0;
         mAVCircularBuffer.Add (& mAVHostBuffer [bufferNdx]);
     }    //    for each AVDataBuffer
 
@@ -255,10 +274,10 @@ void NTV2Capture::RouteInputSignal (void)
     if (!::NTV2DeviceCanDoInputSource (mDeviceID, mInputSource))
         mInputSource = NTV2_INPUTSOURCE_SDI1;
 
-    const bool                        isRGB                    (::IsRGBFormat (mPixelFormat));
-    const NTV2OutputCrosspointID    sdiInputWidgetOutputXpt    (::GetSDIInputOutputXptFromChannel (mInputChannel));
-    const NTV2InputCrosspointID        frameBufferInputXpt        (::GetFrameBufferInputXptFromChannel (mInputChannel));
-    const NTV2InputCrosspointID        cscWidgetVideoInputXpt    (::GetCSCInputXptFromChannel (mInputChannel));
+    const bool                      isRGB                    (::IsRGBFormat (mPixelFormat));
+    const NTV2OutputCrosspointID    sdiInputWidgetOutputXpt  (::GetSDIInputOutputXptFromChannel (mInputChannel));
+    const NTV2InputCrosspointID     frameBufferInputXpt      (::GetFrameBufferInputXptFromChannel (mInputChannel));
+    const NTV2InputCrosspointID     cscWidgetVideoInputXpt   (::GetCSCInputXptFromChannel (mInputChannel));
     const NTV2OutputCrosspointID    cscWidgetRGBOutputXpt    (::GetCSCOutputXptFromChannel (mInputChannel, /*inIsKey*/ false, /*inIsRGB*/ true));
 
     if (isRGB)
@@ -353,30 +372,21 @@ void NTV2Capture::ProducerThreadStatic (AJAThread * pThread, void * pContext)   
 
 void NTV2Capture::CaptureFrames (void)
 {
-    AUTOCIRCULATE_TRANSFER    inputXfer;    //    My A/C input transfer info
+    AUTOCIRCULATE_TRANSFER   inputXfer;    //    My A/C input transfer info
     NTV2AudioChannelPairs    nonPcmPairs, oldNonPcmPairs;
-    ULWord                    acOptions            (AUTOCIRCULATE_WITH_RP188 | (mWithAnc ? AUTOCIRCULATE_WITH_ANC : 0));
 
-    mDeviceRef->AutoCirculateStop(mInputChannel);    //    Just in case
+    bool setUpAC = StartAutoCirculateBuffers();
 
-    //    Tell AutoCirculate to use 7 frame buffers for capturing from the device...
+    if(setUpAC == false)
     {
-        AJAAutoLock    autoLock (mLock);    //    Avoid A/C buffer collisions with other processes
-        mDeviceRef->AutoCirculateInitForInput(mInputChannel, 
-                                              ON_DEVICE_BUFFER_SIZE, //    Number of frames to circulate
-                                              mAudioSystem,          //    Which audio system (if any)?
-                                              acOptions);            //    Include timecode (and maybe Anc too)
+        cerr << "!! Unable to start auto circulate !!" << endl;
     }
-    
-    //    Start AutoCirculate running...
-    mDeviceRef->AutoCirculateStart(mInputChannel);
 
     while (!mGlobalQuit)
     {
         AUTOCIRCULATE_STATUS    acStatus;
         mDeviceRef->AutoCirculateGetStatus(mInputChannel, acStatus);
 
-        // TODO - signal an error if we can't get an input frame
         if (acStatus.IsRunning () && acStatus.HasAvailableInputFrame ())
         {
             LogBufferState(acStatus.GetNumAvailableOutputFrames());
@@ -440,6 +450,55 @@ void NTV2Capture::CaptureFrames (void)
     mDeviceRef->AutoCirculateStop(mInputChannel);
 
 }    //    CaptureFrames
+
+
+bool NTV2Capture::StartAutoCirculateBuffers(uint32_t retries)
+{
+    ULWord acOptions(AUTOCIRCULATE_WITH_RP188 | (mWithAnc ? AUTOCIRCULATE_WITH_ANC : 0));
+
+    mDeviceRef->AutoCirculateStop(mInputChannel);    //    Just in case
+    bool setUpAC(false);
+
+    //    Tell AutoCirculate to use 7 frame buffers for capturing from the device...
+    {
+        AJAAutoLock    autoLock (mLock);    //    Avoid A/C buffer collisions with other processes
+        setUpAC = mDeviceRef->AutoCirculateInitForInput(mInputChannel, 
+                                                        ON_DEVICE_BUFFER_SIZE, //    Number of frames to circulate
+                                                        mAudioSystem,          //    Which audio system (if any)?
+                                                        acOptions);            //    Include timecode (and maybe Anc too)
+
+        if(setUpAC == false)
+        {
+            cerr << "!! Unable to initialize AutoCirculate !!" << endl;
+        }
+        //    Start AutoCirculate running...
+        setUpAC = mDeviceRef->AutoCirculateStart(mInputChannel);
+
+        if(setUpAC == false)
+        {
+            cerr << "!! Unable to start AutoCirculate !!" << endl;
+        }
+    }
+
+    // Note: there seems to be a race condition when starting the autocirculate buffer. This isn't ideal, but stopping, waiting 
+    // and re-trying seems to make this a lot more reliable. TODO: follow up with Aja to see if this is a known issue
+    if(setUpAC == false && retries > 0)
+    {
+        mDeviceRef->AutoCirculateStop(mInputChannel);
+
+        Sleep(100);
+
+        cerr << "!! Retrying init AutoCirculate, retries == " << retries << " !!" << endl;
+        setUpAC = StartAutoCirculateBuffers(retries - 1);
+
+        if(setUpAC == true)
+        {
+            cout << "!! AutoCirculate started on retry !!" << endl;
+        }
+    }
+
+    return setUpAC;
+}
 
 
 /**

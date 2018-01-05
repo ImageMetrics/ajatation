@@ -1,3 +1,18 @@
+/* Copyright 2017 Streampunk Media Ltd.
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+*/
+
 
 // AjatationTestControlDlg.cpp : implementation file
 //
@@ -52,8 +67,8 @@ CAjatationTestControlDlg::CAjatationTestControlDlg(CWnd* pParent /*=NULL*/)
     control(CAjatationTestControlDlg::UpdateCallback, this)
     , captureDevice(0)
     , captureChannel(0)
-    , playbackDevice(0)
-    , playbackChannel(0)
+    , playbackDevice(1)
+    , playbackChannel(3)
     , capFramesReceived(0)
     , capBytesPerFrame(0)
     , capFramesAvailable(0)
@@ -223,7 +238,7 @@ void CAjatationTestControlDlg::OnBnClickedButtonStartCapture()
 
     if(!control.IsCapturing())
     {
-        control.StartCapture();
+        control.StartCapture(captureDevice, captureChannel);
     }
     else
     {
@@ -239,7 +254,7 @@ void CAjatationTestControlDlg::OnBnClickedButtonStartPlayback()
 
     if(!control.IsPlaying())
     {
-        control.StartPlayback();
+        control.StartPlayback(playbackDevice, playbackChannel);
     }
     else
     {

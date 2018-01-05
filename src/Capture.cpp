@@ -13,10 +13,6 @@
   limitations under the License.
 */
 
-/* TODO: add license
-**
-*/
-
 #include <memory>
 #include "Capture.h"
 #include "gen2ajaTypeMaps.h"
@@ -28,15 +24,12 @@ inline Nan::Persistent<v8::Function> &Capture::constructor() {
   return myConstructor;
 }
 
-Capture::Capture(uint32_t deviceIndex, uint32_t displayMode, uint32_t pixelFormat) 
+Capture::Capture(uint32_t deviceIndex, uint32_t channelNumber, uint32_t displayMode, uint32_t pixelFormat) 
 : deviceIndex_(deviceIndex),
+  channelNumber_(channelNumber),
   displayMode_(displayMode), 
   genericPixelFormat_(pixelFormat),
   audioEnabled_(false)
-  //genericPixelFormat_;
-  //nativePixelFormat_
-  //width_;
-  //height_;
 {
   async = new uv_async_t;
   uv_async_init(uv_default_loop(), async, FrameCallback);
@@ -44,10 +37,12 @@ Capture::Capture(uint32_t deviceIndex, uint32_t displayMode, uint32_t pixelForma
   async->data = this;
 }
 
+
 Capture::~Capture() {
   if (!captureCB_.IsEmpty())
     captureCB_.Reset();
 }
+
 
 NAN_MODULE_INIT(Capture::Init) {
 
@@ -61,6 +56,7 @@ NAN_MODULE_INIT(Capture::Init) {
   Nan::SetPrototypeMethod(tpl, "doCapture", DoCapture);
   Nan::SetPrototypeMethod(tpl, "stop", StopCapture);
   Nan::SetPrototypeMethod(tpl, "enableAudio", EnableAudio);
+  Nan::SetPrototypeMethod(tpl, "getVideoFormat", GetVideoFormat);
 
   constructor().Reset(Nan::GetFunction(tpl).ToLocalChecked());
   Nan::Set(target, Nan::New("Capture").ToLocalChecked(),
@@ -86,6 +82,7 @@ NAN_METHOD(Capture::New) {
   }
 }
 
+
 NAN_METHOD(Capture::DeviceInit) {
   Capture* obj = ObjectWrap::Unwrap<Capture>(info.Holder());
 
@@ -95,29 +92,25 @@ NAN_METHOD(Capture::DeviceInit) {
       info.GetReturnValue().Set(Nan::New("sad :-(").ToLocalChecked());
 }
 
+
 NAN_METHOD(Capture::EnableAudio) {
   Capture* obj = ObjectWrap::Unwrap<Capture>(info.Holder());
-  // HRESULT result;
-  //BMDAudioSampleRate sampleRate = info[0]->IsNumber() ?
-  //    (BMDAudioSampleRate) Nan::To<uint32_t>(info[0]).FromJust() : bmdAudioSampleRate48kHz;
-  //BMDAudioSampleType sampleType = info[1]->IsNumber() ?
-  //    (BMDAudioSampleType) Nan::To<uint32_t>(info[1]).FromJust() : bmdAudioSampleType16bitInteger;
-  //uint32_t channelCount = info[2]->IsNumber() ? Nan::To<uint32_t>(info[2]).FromJust() : 2;
+  HRESULT result;
 
-  // result = obj->setupAudioInput(/*sampleRate, sampleType, channelCount*/);
+  result = obj->setupAudioInput();
 
-  // switch (result) {
-  //   case E_INVALIDARG:
-  //     info.GetReturnValue().Set(
-  //       Nan::New<v8::String>("audio channel count must be 2, 8 or 16").ToLocalChecked());
-  //     break;
-  //   case S_OK:
-  //     info.GetReturnValue().Set(Nan::New<v8::String>("audio enabled").ToLocalChecked());
-  //     break;
-  //   default:
-  //     info.GetReturnValue().Set(Nan::New<v8::String>("failed to start audio").ToLocalChecked());
-  //     break;
-  // }
+  switch (result) {
+    case E_INVALIDARG:
+      info.GetReturnValue().Set(
+        Nan::New<v8::String>("audio channel count must be 2, 8 or 16").ToLocalChecked());
+      break;
+    case S_OK:
+      info.GetReturnValue().Set(Nan::New<v8::String>("audio enabled").ToLocalChecked());
+      break;
+    default:
+      info.GetReturnValue().Set(Nan::New<v8::String>("failed to start audio").ToLocalChecked());
+      break;
+  }
 }
 
 NAN_METHOD(Capture::DoCapture) {
@@ -147,6 +140,13 @@ NAN_METHOD(Capture::StopCapture) {
   {
     info.GetReturnValue().Set(Nan::New<v8::String>("Unable to stop capture.").ToLocalChecked());
   }
+}
+
+
+NAN_METHOD(Capture::GetVideoFormat) {
+  Capture* obj = ObjectWrap::Unwrap<Capture>(info.Holder());
+
+  info.GetReturnValue().Set(Nan::New<v8::Uint32>(obj->getVideoFormat()));
 }
 
 
@@ -180,18 +180,32 @@ bool Capture::stop()
 }
 
 
+GenericDisplayMode Capture::getVideoFormat()
+{
+    GenericDisplayMode videoFormat = bmdModeUnknown;
+
+    if (capture_)
+    {
+        NTV2VideoFormat nativeFormat = capture_->GetVideoFormat();
+
+        videoFormat = DISPLAY_MODE_MAP.ToA(nativeFormat);
+    }
+
+    return videoFormat;
+}
+
+
 bool Capture::initNtv2Capture()
 {
     bool  success(false);
     string deviceSpec(AjaDevice::DEFAULT_DEVICE_SPECIFIER);
     char buffer[10];
     
-    if(snprintf(buffer, sizeof(buffer), "%d", deviceIndex_) > 0)
+    if(_itoa_s(deviceIndex_, buffer, 10) == 0)
     {
         deviceSpec = buffer;
     }
 
-    uint32_t                     channelNumber(AjaDevice::DEFAULT_CAPTURE_CHANNEL);                    //    Number of the channel to use
     const NTV2FrameBufferFormat  pixelFormat(getPixelFormat(genericPixelFormat_));
     bool                         multiFormat(false); 
     bool                         captureAncilliaryData(false); 
@@ -199,10 +213,10 @@ bool Capture::initNtv2Capture()
 
     cout << "Capture initializing with pixelFormat " << pixelFormat << endl;
 
-//    Instantiate the NTV2Capture object, using the specified AJA device...
+    //    Instantiate the NTV2Capture object, using the specified AJA device...
     capture_.reset(new NTV2Capture(&DEFAULT_INIT_PARAMS,
-        deviceSpec, true,                             //    With audio?
-        ::GetNTV2ChannelForIndex(channelNumber - 1),    //    Channel
+        deviceSpec, true,                               //    With audio?
+        ::GetNTV2ChannelForIndex(channelNumber_ - 1),   //    Channel
         pixelFormat,                                    //    Pixel format
         false,                                          //    Level A/B conversion?
         multiFormat,                                    //    Multi-format mode?
@@ -226,17 +240,12 @@ bool Capture::initNtv2Capture()
 }
 
 
-// HRESULT Capture::setupAudioInput(/*BMDAudioSampleRate sampleRate,
-//   BMDAudioSampleType sampleType, uint32_t channelCount*/) {
+HRESULT Capture::setupAudioInput() {
 
-//   audioEnabled_ = true;
-//   // TODO: handle audio properly
+  audioEnabled_ = true;
 
-//   //sampleByteFactor_ = channelCount * (sampleType / 8);
-//   //HRESULT result = m_deckLinkInput->EnableAudioInput(sampleRate, sampleType, channelCount);
-
-//   return S_OK;
-// }
+  return S_OK;
+}
 
 // Stop video input
 bool Capture::cleanupNtv2Capture()
@@ -273,10 +282,6 @@ void Capture::_frameArrived(void* context)
 }
 
 
-//HRESULT    Capture::VideoInputFormatChanged (BMDVideoInputFormatChangedEvents notificationEvents, IDeckLinkDisplayMode* newDisplayMode, BMDDetectedVideoInputFormatFlags detectedSignalFlags) {
-//  return S_OK;
-//};
-
 void Capture::TestUV() {
   uv_async_send(async);
 }
@@ -302,7 +307,14 @@ NAUV_WORK_CB(Capture::FrameCallback) {
 
     if (nextFrame->fAudioBuffer != nullptr && capture->audioEnabled_ == true)
     {
-        ba = Nan::CopyBuffer(reinterpret_cast<char*>(nextFrame->fAudioBuffer), nextFrame->fAudioBufferSize).ToLocalChecked();
+        // Transform the output buffer into the desired number of channels - currently this is 2
+        const char* audioTransformBuffer(nullptr);
+        uint32_t audioTransformBufferSize(0);
+
+        tie(audioTransformBuffer, audioTransformBufferSize) = 
+            capture->audioTransform.TransformFromCard(reinterpret_cast<char*>(nextFrame->fAudioBuffer), nextFrame->fAudioBufferSize, 16, 2);
+
+        ba = Nan::CopyBuffer(audioTransformBuffer, audioTransformBufferSize).ToLocalChecked();
     }
 
     capture->capture_->UnlockFrame();
@@ -312,8 +324,6 @@ NAUV_WORK_CB(Capture::FrameCallback) {
   v8::Local<v8::Value> argv[2] = { bv, ba };
   cb.Call(2, argv);
 }
-
-
 
 
 NTV2FrameBufferFormat Capture::getPixelFormat(uint32_t genericPixelFormat)

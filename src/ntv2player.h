@@ -2,6 +2,8 @@
     @file        ntv2player.cpp
     @brief        Header file for NTV2Player demonstration class
     @copyright    Copyright (C) 2013-2017 AJA Video Systems, Inc.  All rights reserved.
+
+    This version of the file is based upon the sample code provided by Aja
 **/
 
 /* Copyright 2017 Streampunk Media Ltd.
@@ -23,6 +25,7 @@ limitations under the License.
 #ifndef _NTV2PLAYER_H
 #define _NTV2PLAYER_H
 
+#include <atomic>
 #include "ntv2enums.h"
 #include "ntv2devicefeatures.h"
 #include "ntv2devicescanner.h"
@@ -62,28 +65,28 @@ class NTV2Player
             @brief    Constructs me using the given configuration settings.
             @note    I'm not completely initialized and ready for use until after my Init method has been called.
             @param[in]    inDeviceSpecifier    Specifies the AJA device to use. Defaults to "0", the first device found.
-            @param[in]    inWithAudio            If true, include audio tone in the output signal;  otherwise, omit it.
-                                            Defaults to "true".
+            @param[in]    inWithAudio          If true, include audio tone in the output signal;  otherwise, omit it.
+                                               Defaults to "true".
             @param[in]    inChannel            Specifies the channel to use. Defaults to NTV2_CHANNEL1.
             @param[in]    inPixelFormat        Specifies the pixel format to use for the device's frame buffers.
-                                            Defaults to 8-bit YUV.
-            @param[in]    inOutputDestination    Specifies which output to playout to. Defaults to SDI2.
+                                               Defaults to 8-bit YUV.
+            @param[in]    inOutputDestination  Specifies which output to playout to. Defaults to SDI2.
             @param[in]    inVideoFormat        Specifies the video format to use. Defaults to 1080i5994.
-            @param[in]    inWithVanc            If true, enable VANC; otherwise disable VANC. Defaults to false.
+            @param[in]    inWithVanc           If true, enable VANC; otherwise disable VANC. Defaults to false.
             @param[in]    inLevelConversion    If true, demonstrate level A to B conversion; otherwise don't. Defaults to false.
-            @param[in]    inDoMultiFormat        If true, use multi-format mode; otherwise use uniformat mode. Defaults to false (uniformat mode).
+            @param[in]    inDoMultiFormat      If true, use multi-format mode; otherwise use uniformat mode. Defaults to false (uniformat mode).
         **/
                                 NTV2Player (const AjaDevice::InitParams* initParams,
-                                            const std::string &             inDeviceSpecifier    = "0",
-                                            const bool                     inWithAudio            = true,
-                                            const NTV2Channel             inChannel            = NTV2_CHANNEL1,
-                                            const NTV2FrameBufferFormat     inPixelFormat        = NTV2_FBF_8BIT_YCBCR,
-                                            const NTV2OutputDestination     inOutputDestination    = NTV2_OUTPUTDESTINATION_SDI2,
-                                            const NTV2VideoFormat         inVideoFormat        = NTV2_FORMAT_1080i_5994,
-                                            const bool                     inWithVanc            = false,
-                                            const bool                     inLevelConversion    = false,
-                                            const bool                     inDoMultiFormat        = false,
-                                            const AJAAncillaryDataType     inSendHDRType        = AJAAncillaryDataType_Unknown);
+                                            const std::string &          inDeviceSpecifier    = "0",
+                                            const bool                   inWithAudio          = true,
+                                            const NTV2Channel            inChannel            = NTV2_CHANNEL1,
+                                            const NTV2FrameBufferFormat  inPixelFormat        = NTV2_FBF_8BIT_YCBCR,
+                                            const NTV2OutputDestination  inOutputDestination  = NTV2_OUTPUTDESTINATION_SDI2,
+                                            const NTV2VideoFormat        inVideoFormat        = NTV2_FORMAT_1080i_5994,
+                                            const bool                   inWithVanc           = false,
+                                            const bool                   inLevelConversion    = false,
+                                            const bool                   inDoMultiFormat      = false,
+                                            const AJAAncillaryDataType   inSendHDRType        = AJAAncillaryDataType_Unknown);
 
         virtual                    ~NTV2Player (void);
 
@@ -106,7 +109,7 @@ class NTV2Player
         /**
             @return    True if I'm running;  otherwise false.
         **/
-        virtual bool            IsRunning (void) const                {return !mGlobalQuit;}
+        virtual bool            IsRunning (void) const {return !mGlobalQuit;}
 
         /**
             @brief    Provides status information about my output (playout) process.
@@ -134,17 +137,17 @@ class NTV2Player
         /**
         @brief    Add a frame to the frame buffer, to be played out in its turn.
         @param[in]    videoData            pointer to the video frame to queue.
-        @param[in]    videoDataLength        length of the video data in bytes.
+        @param[in]    videoDataLength      length of the video data in bytes.
         @param[in]    audioData            pointer to the audio frame to queue.
-        @param[in]    audioDataLength        length of the audio data in bytes.
-        @param[out]    unusedFrames        If not null, receives the number of unused frames that can be written to.
+        @param[in]    audioDataLength      length of the audio data in bytes.
+        @param[out]   usedFrames           If not null, receives the number of buffered frames.
         **/
         virtual bool ScheduleFrame(
             const char* videoData,
             const size_t videoDataLength,
             const char* audioData,
             const size_t audioDataLength,
-            uint32_t* unusedFrames = nullptr);
+            uint32_t*    usedFrames = nullptr);
 
         //    Protected Instance Methods
     protected:
@@ -200,7 +203,7 @@ class NTV2Player
 
         /**
             @brief    Inserts audio tone (based on my current tone frequency) into the given audio buffer.
-            @param[out]    audioBuffer        Specifies a valid, non-NULL pointer to the buffer that is to receive
+            @param[out]    audioBuffer  Specifies a valid, non-NULL pointer to the buffer that is to receive
                                         the audio tone data.
             @return    Total number of bytes written into the buffer.
         **/
@@ -227,6 +230,12 @@ class NTV2Player
         **/
         virtual bool            CheckOutputReady();
 
+        /**
+            @brief    Get/Set the Used Buffers counter atomically
+        **/
+        uint32_t                GetUsedBuffers(void) { return mBufferedFrames.load(); }
+        void                    SetUsedBuffers(uint32_t numUsedBuffers) { mBufferedFrames.store(numUsedBuffers); }
+
 #ifdef DEBUG_OUTPUT
         void                    LogBufferState(const char* location);
 #define LOG_BUFFER_STATE(LOCATION) LogBufferState(LOCATION)
@@ -238,8 +247,8 @@ class NTV2Player
     protected:
         /**
             @brief    This is the consumer thread's static callback function that gets called when the consumer thread starts.
-                    This function gets "Attached" to the consumer thread's AJAThread instance.
-            @param[in]    pThread        A valid pointer to the consumer thread's AJAThread instance.
+                      This function gets "Attached" to the consumer thread's AJAThread instance.
+            @param[in]    pThread     A valid pointer to the consumer thread's AJAThread instance.
             @param[in]    pContext    Context information to pass to the thread.
                                     (For this application, this will be set to point to the NTV2Player instance.)
         **/
@@ -247,21 +256,19 @@ class NTV2Player
 
         /**
             @brief    This is the producer thread's static callback function that gets called when the producer thread starts.
-                    This function gets "Attached" to the producer thread's AJAThread instance.
-            @param[in]    pThread        A valid pointer to the producer thread's AJAThread instance.
+                      This function gets "Attached" to the producer thread's AJAThread instance.
+            @param[in]    pThread     A valid pointer to the producer thread's AJAThread instance.
             @param[in]    pContext    Context information to pass to the thread.
                                     (For this application, this will be set to point to the NTV2Player instance.)
         **/
         static void                ProducerThreadStatic (AJAThread * pThread, void * pContext);
 
         /**
-            @brief    Returns the RP188 DBB register number to use for the given NTV2OutputDestination.
+            @brief        Returns the RP188 DBB register number to use for the given NTV2OutputDestination.
             @param[in]    inOutputSource    Specifies the NTV2OutputDestination of interest.
-            @return    The number of the RP188 DBB register to use for the given output destination.
+            @return       The number of the RP188 DBB register to use for the given output destination.
         **/
         static ULWord            GetRP188RegisterForOutput (const NTV2OutputDestination inOutputSource);
-
-
 
     //    Private Member Data
     private:
@@ -308,6 +315,8 @@ class NTV2Player
         const AjaDevice::InitParams* mInitParams;
         bool                         mEnableTestPatternFill;
         bool                         mOutputStarted;
+        std::atomic<uint32_t>        mBufferedFrames;
+
 };    //    NTV2Player
 
 #endif    //    _NTV2PLAYER_H

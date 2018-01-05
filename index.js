@@ -13,9 +13,6 @@
   limitations under the License.
 */
 
-/* TODO - add license
-*/
-
 'use strict';
 var os = require('os');
 var isWinOrMac = (os.platform() === 'win32') || (os.platform() === 'darwin');
@@ -30,13 +27,21 @@ const EventEmitter = require('events');
 // var SegfaultHandler = require('../node-segfault-handler');
 // SegfaultHandler.registerHandler("crash.log");
 
-function Capture (deviceIndex, displayMode, pixelFormat) {
-  if (arguments.length !== 3 || typeof deviceIndex !== 'number' ||
-      typeof displayMode !== 'number' || typeof pixelFormat !== 'number' ) {
-    this.emit('error', new Error('Capture requires three number arguments: ' +
-      'index, display mode and pixel format'));
+function Capture (deviceIndex, channelNumber, displayMode, pixelFormat) {
+    console.log("Capture Args: " + arguments.length);
+    console.log("  deviceIndex: " + deviceIndex + " (" + typeof deviceIndex + ")");
+    console.log("  channelNumber: " + channelNumber + " (" + typeof channelNumber + ")");
+    console.log("  displayMode: " + displayMode + " (" + typeof displayMode + ")");
+    console.log("  pixelFormat: " + pixelFormat + " (" + typeof pixelFormat + ")");
+    if (arguments.length !== 4 || 
+      typeof deviceIndex !== 'number' ||
+      typeof channelNumber !== 'number' ||
+      typeof displayMode !== 'number' || 
+      typeof pixelFormat !== 'number' ) {
+    this.emit('error', new Error('Capture requires four number arguments: ' +
+      'index, channel, display mode and pixel format'));
   } else {
-    this.capture = new ajatatorNative.Capture(deviceIndex, displayMode, pixelFormat);
+    this.capture = new ajatatorNative.Capture(deviceIndex, channelNumber, displayMode, pixelFormat);
   }
   this.initialised = false;
   EventEmitter.call(this);
@@ -71,31 +76,54 @@ Capture.prototype.stop = function () {
 }
 
 Capture.prototype.enableAudio = function (sampleRate, sampleType, channelCount) {
-  try {
-    if (!this.initialised) {
-      this.initialised = this.capture.init() ? true : false;
-      if (!this.initialised) {
-        console.error('Cannot initialise audio when no device is present.');
-        return 'Cannot initialise audio when no device is present.';
-      }
+    try {
+        if (!this.initialised) {
+            this.initialised = this.capture.init() ? true : false;
+            if (!this.initialised) {
+                console.error('Cannot initialise audio when no device is present.');
+                return 'Cannot initialise audio when no device is present.';
+            }
+        }
+        return this.capture.enableAudio(
+          typeof sampleRate === 'string' ? +sampleRate : sampleRate,
+          typeof sampleType === 'string' ? +sampleType: sampleType,
+          typeof channelCount === 'string' ? +channelCount : channelCount);
+    } catch (err) {
+        return "Error when enabling audio: " + err;
     }
-    return this.capture.enableAudio(
-      typeof sampleRate === 'string' ? +sampleRate : sampleRate,
-      typeof sampleType === 'string' ? +sampleType: sampleType,
-      typeof channelCount === 'string' ? +channelCount : channelCount);
-  } catch (err) {
-    return "Error when enabling audio: " + err;
-  }
+}
+
+Capture.prototype.getVideoFormat = function () {
+    try {
+        if (!this.initialised) {
+            this.initialised = this.capture.init() ? true : false;
+            if (!this.initialised) {
+                console.error('Cannot get video format when no device is present.');
+                return 'Cannot get video format when no device is present.';
+            }
+        }
+        return this.capture.getVideoFormat();
+    } catch (err) {
+        return "Error when get video format: " + err;
+    }
 }
 
 
-function Playback (deviceIndex, displayMode, pixelFormat) {
-  if (arguments.length !== 3 || typeof deviceIndex !== 'number' ||
-      typeof displayMode !== 'number' || typeof pixelFormat !== 'number' ) {
-    this.emit('error', new Error('Playback requires three number arguments: ' +
-      'index, display mode and pixel format'));
+function Playback (deviceIndex, channelNumber, displayMode, pixelFormat) {
+    console.log("Playback Args: " + arguments.length);
+    console.log("  deviceIndex: " + deviceIndex + " (" + typeof deviceIndex + ")");
+    console.log("  channelNumber: " + channelNumber + " (" + typeof channelNumber + ")");
+    console.log("  displayMode: " + displayMode + " (" + typeof displayMode + ")");
+    console.log("  pixelFormat: " + pixelFormat + " (" + typeof pixelFormat + ")");
+    if (arguments.length !== 4 || 
+      typeof deviceIndex !== 'number' ||
+      typeof channelNumber !== 'number' ||
+      typeof displayMode !== 'number' || 
+      typeof pixelFormat !== 'number' ) {
+    this.emit('error', new Error('Playback requires four number arguments: ' +
+      'index, channel, display mode and pixel format'));
   } else {
-    this.playback = new ajatatorNative.Playback(deviceIndex, displayMode, pixelFormat);
+    this.playback = new ajatatorNative.Playback(deviceIndex, channelNumber, displayMode, pixelFormat);
   }
   this.initialised = false;
   EventEmitter.call(this);
@@ -117,14 +145,13 @@ Playback.prototype.start = function () {
   }
 }
 
-Playback.prototype.frame = function (f) {
+Playback.prototype.frame = function (fv, fa) {
   try {
     if (!this.initialised) {
       this.playback.init();
       this.initialised = true;
     }
-    var result = this.playback.scheduleFrame(f);
-    // console.log("*** playback.scheduleFrame", result);
+    var result = this.playback.scheduleFrame(fv, fa);
     if (typeof result === 'string')
       throw new Error("Problem scheduling frame: " + result);
     else
