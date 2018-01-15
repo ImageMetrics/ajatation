@@ -19,11 +19,12 @@
   "homepage": "https://github.com/Streampunk/ajatation#readme",
   "dependencies": {
     "bindings": "^1.2.1",
-    "electron": "^1.7.9",
-    "electron-rebuild": "^1.6.0",
     "highland": "^2.11.1",
     "nan": "^2.6.2",
     "node-gyp": "^3.6.2"
+  },
+  "devDependencies": {
+    "electron-rebuild": "^1.6.0"
   },
   "gypfile": true
 }
