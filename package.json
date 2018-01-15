@@ -4,7 +4,7 @@
   "description": "Async node.js interface to Aja Kona IP capture and playback devices.",
   "main": "index.js",
   "scripts": {
-    "install": "node-gyp rebuild && electron-rebuild -f",
+    "install": "electron-rebuild -f",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -24,6 +24,7 @@
     "node-gyp": "^3.6.2"
   },
   "devDependencies": {
+    "electron": "^1.7.9",
     "electron-rebuild": "^1.6.0"
   },
   "gypfile": true

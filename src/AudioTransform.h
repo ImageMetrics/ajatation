@@ -60,7 +60,7 @@ public:
             int sample = *(int *)readBuffer;
             sample = (sample & 0xFF000000) >> 24 | (sample & 0x00FF0000) >> 8 | (sample & 0x0000FF00) << 8 | (sample & 0x000000FF) << 24;
             sample = sample & 0x00FFFFFF;
-            memcpy_s(writeBuffer, MAX_BUFFER_SIZE - bytesWritten, (void *)&sample, AUDIO_3BYTE_SAMPLE_SIZE_BYTES);
+            memcpy(writeBuffer, (void *)&sample, AUDIO_3BYTE_SAMPLE_SIZE_BYTES);
 
             bytesWritten += AUDIO_3BYTE_SAMPLE_SIZE_BYTES;
             writeBuffer  += AUDIO_3BYTE_SAMPLE_SIZE_BYTES;
@@ -69,7 +69,7 @@ public:
             sample = *(int *)&readBuffer[AUDIO_4BYTE_SAMPLE_SIZE_BYTES];
             sample = (sample & 0xFF000000) >> 24 | (sample & 0x00FF0000) >> 8 | (sample & 0x0000FF00) << 8 | (sample & 0x000000FF) << 24;
             sample = sample & 0x00FFFFFF;
-            memcpy_s(writeBuffer, MAX_BUFFER_SIZE - bytesWritten, (void *)&sample, AUDIO_3BYTE_SAMPLE_SIZE_BYTES);
+            memcpy(writeBuffer, (void *)&sample, AUDIO_3BYTE_SAMPLE_SIZE_BYTES);
 
             bytesWritten += AUDIO_3BYTE_SAMPLE_SIZE_BYTES;
             writeBuffer  += AUDIO_3BYTE_SAMPLE_SIZE_BYTES;
@@ -109,12 +109,12 @@ public:
             // Left Channel
             int sample = (*(int *)readBuffer) & 0x00FFFFFF;
 			sample = (sample & 0xFF000000) >> 24 | (sample & 0x00FF0000) >> 8 | (sample & 0x0000FF00) << 8 | (sample & 0x000000FF) << 24;
-			memcpy_s(writeBuffer, MAX_BUFFER_SIZE - bytesWritten, (void *)&sample, AUDIO_4BYTE_SAMPLE_SIZE_BYTES);
+			memcpy(writeBuffer, (void *)&sample, AUDIO_4BYTE_SAMPLE_SIZE_BYTES);
 
             // Right Channel
 			sample = (*(int *)&readBuffer[AUDIO_3BYTE_SAMPLE_SIZE_BYTES]) & 0xFFFFFF00;
 			sample = (sample & 0xFF000000) >> 24 | (sample & 0x00FF0000) >> 8 | (sample & 0x0000FF00) << 8 | (sample & 0x000000FF) << 24;
-			memcpy_s(&writeBuffer[AUDIO_4BYTE_SAMPLE_SIZE_BYTES], MAX_BUFFER_SIZE - bytesWritten, (void *)&sample, AUDIO_4BYTE_SAMPLE_SIZE_BYTES);
+			memcpy(&writeBuffer[AUDIO_4BYTE_SAMPLE_SIZE_BYTES], (void *)&sample, AUDIO_4BYTE_SAMPLE_SIZE_BYTES);
 
             bytesWritten += outputStrideBytes;
             writeBuffer  += outputStrideBytes;

@@ -29,8 +29,9 @@
         },
         "link_settings": {
           "libraries": [
-            "../aja/ntv2sdkmac_13.0.0.11/DerivedData/ntv2/Build/Products/libajabase.a",
-            "../aja/ntv2sdkmac_13.0.0.11/DerivedData/ntv2/Build/Products/libajantv2.a",
+            "../aja/ntv2sdkmac_13.0.0.11/lib/libajantv2.a",
+            "../aja/ntv2sdkmac_13.0.0.11/lib/libajaanc.a",
+            "../aja/ntv2sdkmac_13.0.0.11/lib/libajabase.a",
             "-framework Foundation"
           ]
         },
@@ -70,7 +71,8 @@
           }
         },
         "libraries": [
-			"-l../aja/ntv2sdkwin_13.0.0.18/lib/libajantv2.lib",
+      "-l../aja/ntv2sdkwin_13.0.0.18/lib/libajaanc_vs12_64.lib",
+      "-l../aja/ntv2sdkwin_13.0.0.18/lib/libajantv2.lib",
 			"-l../aja/ntv2sdkwin_13.0.0.18/lib/libajabase.lib"
         ],
         "include_dirs" : [

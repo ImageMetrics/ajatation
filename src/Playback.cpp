@@ -185,7 +185,7 @@ bool Playback::initNtv2Player()
     // Try to get the deviceId from the init params
     string deviceSpec(AjaDevice::DEFAULT_DEVICE_SPECIFIER);
     char buffer[10];
-    if(snprintf(buffer, sizeof(buffer), "%d", deviceIndex_) > 0)
+    if(sprintf(buffer, "%d", deviceIndex_) > 0)
     {
         deviceSpec = buffer;
     }

@@ -95,16 +95,16 @@ NAN_METHOD(Capture::DeviceInit) {
 
 NAN_METHOD(Capture::EnableAudio) {
   Capture* obj = ObjectWrap::Unwrap<Capture>(info.Holder());
-  HRESULT result;
+  int result;
 
   result = obj->setupAudioInput();
 
   switch (result) {
-    case E_INVALIDARG:
-      info.GetReturnValue().Set(
-        Nan::New<v8::String>("audio channel count must be 2, 8 or 16").ToLocalChecked());
-      break;
-    case S_OK:
+    // case E_INVALIDARG:
+    //   info.GetReturnValue().Set(
+    //     Nan::New<v8::String>("audio channel count must be 2, 8 or 16").ToLocalChecked());
+    //   break;
+    case 0:
       info.GetReturnValue().Set(Nan::New<v8::String>("audio enabled").ToLocalChecked());
       break;
     default:
@@ -201,7 +201,7 @@ bool Capture::initNtv2Capture()
     string deviceSpec(AjaDevice::DEFAULT_DEVICE_SPECIFIER);
     char buffer[10];
     
-    if(_itoa_s(deviceIndex_, buffer, 10) == 0)
+    if(sprintf(buffer, "%d", deviceIndex_) > 0)
     {
         deviceSpec = buffer;
     }
@@ -240,11 +240,11 @@ bool Capture::initNtv2Capture()
 }
 
 
-HRESULT Capture::setupAudioInput() {
+int Capture::setupAudioInput() {
 
   audioEnabled_ = true;
 
-  return S_OK;
+  return 0;
 }
 
 // Stop video input

@@ -486,7 +486,7 @@ bool NTV2Capture::StartAutoCirculateBuffers(uint32_t retries)
     {
         mDeviceRef->AutoCirculateStop(mInputChannel);
 
-        Sleep(100);
+        AJATime::Sleep(100);
 
         cerr << "!! Retrying init AutoCirculate, retries == " << retries << " !!" << endl;
         setUpAC = StartAutoCirculateBuffers(retries - 1);

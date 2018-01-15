@@ -44,7 +44,7 @@ private:
   // setup the AJA Kona interface (video standard, pixel format, callback object, ...)
   bool initNtv2Capture();
 
-  HRESULT setupAudioInput();
+  int setupAudioInput();
 
   bool initInput();
 
