@@ -75,9 +75,10 @@ NAN_METHOD(Playback::New) {
   if (info.IsConstructCall()) {
     // Invoked as constructor: `new Playback(...)`
     uint32_t deviceIndex = info[0]->IsUndefined() ? 0 : Nan::To<uint32_t>(info[0]).FromJust();
-    uint32_t displayMode = info[1]->IsUndefined() ? 0 : Nan::To<uint32_t>(info[1]).FromJust();
-    uint32_t pixelFormat = info[2]->IsUndefined() ? 0 : Nan::To<uint32_t>(info[2]).FromJust();
-    Playback* obj = new Playback(deviceIndex, displayMode, pixelFormat);
+    uint32_t channelNumber = info[1]->IsUndefined() ? 0 : Nan::To<uint32_t>(info[1]).FromJust();
+    uint32_t displayMode = info[2]->IsUndefined() ? 0 : Nan::To<uint32_t>(info[2]).FromJust();
+    uint32_t pixelFormat = info[3]->IsUndefined() ? 0 : Nan::To<uint32_t>(info[3]).FromJust();
+    Playback* obj = new Playback(deviceIndex, channelNumber, displayMode, pixelFormat);
     obj->Wrap(info.This());
     info.GetReturnValue().Set(info.This());
   } else {
