@@ -237,7 +237,7 @@ AJAStatus AjaDevice::AddRef(std::string deviceSpecifier, shared_ptr<AjaDevice>& 
 
         if (AJA_SUCCESS(status))
         {
-            references_[deviceSpecifier] = tempRef;
+            // references_[deviceSpecifier] = tempRef;
             ref = tempRef;
         }
     }

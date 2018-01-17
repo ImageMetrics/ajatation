@@ -178,8 +178,8 @@ NTV2Player::~NTV2Player (void)
 
     if (mDeviceRef)
     {
-        //    Unsubscribe from input vertical event...
-        mDeviceRef->UnsubscribeInputVerticalEvent(mOutputChannel);
+        //    Unsubscribe from output vertical event...
+        mDeviceRef->UnsubscribeOutputVerticalEvent(mOutputChannel);
     }
 
     if (mTestPatternVideoBuffers)
